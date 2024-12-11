@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from helper.CRUD import CRUD
 from models.SQLquery import SQLquery
+from ui.new import NewCustomerDialog
 
 class Home(QtWidgets.QWidget):
     def __init__(self):
@@ -9,7 +10,6 @@ class Home(QtWidgets.QWidget):
 
         self.crud = CRUD()
         self.crud.setup()
-        self.users = self.crud.read()
 
         self.setWindowTitle("Home")
         self.setFixedSize(1300, 800)
@@ -111,8 +111,17 @@ class Home(QtWidgets.QWidget):
         # new_user = SQLquery(None, "Jane Doe", "0987654321", "jane.doe@example.com", 25.99, "2024-12-11", True)
         # self.crud.create(new_user)
 
-        self.updateTable(self.users)
+        self.updateTable()
 
+        self.done_button = QtWidgets.QPushButton("Done", self)
+        self.done_button.setGeometry(500, 140, 100, 30)
+        self.done_button.setFont(QtGui.QFont("Poppins", 12))
+        self.done_button.clicked.connect(self.remove_first_row_from_queue)
+
+        self.new_button = QtWidgets.QPushButton("New", self)
+        self.new_button.setGeometry(400, 140, 100, 30)
+        self.new_button.setFont(QtGui.QFont("Poppins", 12))
+        self.new_button.clicked.connect(self.open_new_customer_dialog)
 
     def center_window(self):
         # Get screen geometry
@@ -125,7 +134,8 @@ class Home(QtWidgets.QWidget):
         # Move the window to the center
         self.move(x, y)
 
-    def updateTable(self, data1):
+    def updateTable(self):
+        data1 = self.crud.read()
         # Reset the table rows
         self.table.setRowCount(0)
         self.table2.setRowCount(0)
@@ -172,3 +182,67 @@ class Home(QtWidgets.QWidget):
             for col_idx in range(6):  # Loop through all columns for the first row
                 item = self.table.item(0, col_idx)
                 item.setBackground(QtGui.QColor(255, 255, 0))
+
+    def add_row_to_queue(self, customer):
+        new_id = self.crud.get_last_inserted_id()
+        if new_id:
+            new_id += 1
+        else:
+            new_id = 1
+        sql = SQLquery(new_id, customer.name, customer.number, customer.email, customer.price, customer.date, False)
+
+        if self.crud.create(sql):
+            # Row inserted successfully, reload data and update the table
+            self.updateTable()  # Update the table with the latest data
+            print("Row successfully added to the queue.")
+        else:
+            print("Failed to add row to the database.")
+
+    def add_row_to_priority_queue(self, customer):
+        new_id = self.crud.get_last_inserted_id() + 1
+        sql = SQLquery(new_id, customer.name, customer.number, customer.email, customer.price, customer.date, False)
+
+        if self.crud.create(sql):
+            print("Row successfully added to the priority queue.")
+            
+            # Reload the data and update the table
+            self.updateTable()  # Update the table with the latest data
+        else:
+            print("Failed to add row to the database.")
+
+    def remove_first_row_from_queue(self):
+        if self.table.rowCount() > 0:
+            # Remove the first row from the table
+            row_data = [
+                self.table.item(0, col_idx).text() for col_idx in range(self.table.columnCount())
+            ]
+
+            # Update the database to mark the record as completed
+            sql = SQLquery(
+                int(row_data[0]), row_data[1], row_data[2], row_data[3], float(row_data[4]), row_data[5], True
+            )
+
+            if self.crud.update(sql):
+                # Move the row to the second table
+                new_row_index = self.table2.rowCount()
+                self.table2.insertRow(new_row_index)
+                for col_idx, value in enumerate(row_data):
+                    self.table2.setItem(new_row_index, col_idx, QtWidgets.QTableWidgetItem(value))
+                    item = self.table2.item(new_row_index, col_idx)
+                    item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)  # Make non-editable
+
+                # Remove the row from the first table
+                self.table.removeRow(0)
+                print("First row successfully moved to completed queue.")
+            else:
+                print("Failed to update row in the database.")
+
+            if self.table.rowCount() > 0:
+                for col_idx in range(6):  # Loop through all columns for the first row
+                    item = self.table.item(0, col_idx)
+                    item.setBackground(QtGui.QColor(255, 255, 0))
+
+    def open_new_customer_dialog(self):
+        dialog = NewCustomerDialog(self)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.updateTable()
