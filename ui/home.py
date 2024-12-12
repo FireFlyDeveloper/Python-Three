@@ -61,6 +61,32 @@ class Home(QtWidgets.QWidget):
             border-radius: 15px;                         /* Rounded corners */
         """)
 
+        # Dashboard Label 1
+        self.Dashboard_label = QtWidgets.QLabel("Current :", self)
+        self.Dashboard_label.setFont(QtGui.QFont("Blank's Script Personal Use", 20))
+        self.Dashboard_label.setStyleSheet("color: black;")
+        self.Dashboard_label.setGeometry(480, 5, 300, 50)
+
+        self.Dashboard_label_text = QtWidgets.QLabel("N/A", self)
+        self.Dashboard_label_text.setFont(QtGui.QFont("Poppins", 15))
+        self.Dashboard_label_text.setStyleSheet("color: black;")
+        self.Dashboard_label_text.setGeometry(480, 40, 225, 50)
+
+        self.Dashboard_label_text2 = QtWidgets.QLabel("N/A", self)
+        self.Dashboard_label_text2.setFont(QtGui.QFont("Poppins", 15))
+        self.Dashboard_label_text2.setStyleSheet("color: black;")
+        self.Dashboard_label_text2.setGeometry(480, 70, 225, 50)
+
+        self.Dashboard_label2 = QtWidgets.QLabel("Total :", self)
+        self.Dashboard_label2.setFont(QtGui.QFont("Blank's Script Personal Use", 20))
+        self.Dashboard_label2.setStyleSheet("color: black;")
+        self.Dashboard_label2.setGeometry(750, 5, 300, 50)
+
+        self.Dashboard_label2_text = QtWidgets.QLabel("0", self)
+        self.Dashboard_label2_text.setFont(QtGui.QFont("Poppins", 40))
+        self.Dashboard_label2_text.setStyleSheet("color: black;")
+        self.Dashboard_label2_text.setGeometry(750, 50, 300, 70)
+
         # Panel 2
         self.panel2 = QtWidgets.QWidget(self)
         self.panel2.setGeometry(880, 10, 400, 110)  # Position and size of the panel
@@ -69,6 +95,32 @@ class Home(QtWidgets.QWidget):
             border: 2px solid #000;                      /* Black border */
             border-radius: 15px;                         /* Rounded corners */
         """)
+
+        # Dashboard 2
+        self.Dashboard2_label = QtWidgets.QLabel("Recent :", self)
+        self.Dashboard2_label.setFont(QtGui.QFont("Blank's Script Personal Use", 20))
+        self.Dashboard2_label.setStyleSheet("color: black;")
+        self.Dashboard2_label.setGeometry(900, 5, 300, 50)
+
+        self.Dashboard2_label_text = QtWidgets.QLabel("N/A", self)
+        self.Dashboard2_label_text.setFont(QtGui.QFont("Poppins", 15))
+        self.Dashboard2_label_text.setStyleSheet("color: black;")
+        self.Dashboard2_label_text.setGeometry(900, 40, 225, 50)
+
+        self.Dashboard2_label_text2 = QtWidgets.QLabel("N/A", self)
+        self.Dashboard2_label_text2.setFont(QtGui.QFont("Poppins", 15))
+        self.Dashboard2_label_text2.setStyleSheet("color: black;")
+        self.Dashboard2_label_text2.setGeometry(900, 70, 225, 50)
+
+        self.Dashboard2_label2 = QtWidgets.QLabel("Total :", self)
+        self.Dashboard2_label2.setFont(QtGui.QFont("Blank's Script Personal Use", 20))
+        self.Dashboard2_label2.setStyleSheet("color: black;")
+        self.Dashboard2_label2.setGeometry(1170, 5, 300, 50)
+
+        self.Dashboard2_label2_text = QtWidgets.QLabel("0", self)
+        self.Dashboard2_label2_text.setFont(QtGui.QFont("Poppins", 40))
+        self.Dashboard2_label2_text.setStyleSheet("color: black;")
+        self.Dashboard2_label2_text.setGeometry(1170, 50, 300, 70)
 
         ###################################################################
 
@@ -211,10 +263,25 @@ class Home(QtWidgets.QWidget):
 
             count2 += 1
 
+        self.Dashboard_label_text.setText("N/A")
+        self.Dashboard_label_text2.setText("N/A")
+        self.Dashboard_label2_text.setText(f"{count1}")
+
+        self.Dashboard2_label_text.setText("N/A")
+        self.Dashboard2_label_text2.setText("N/A")
+        self.Dashboard2_label2_text.setText(f"{count2}")
+
         if self.table.rowCount() > 0:
-                for col_idx in range(6):  # Loop through all columns for the first row
-                    item = self.table.item(0, col_idx)
-                    item.setBackground(QtGui.QColor(255, 255, 0))
+            self.Dashboard_label_text.setText(self.table.item(0, 1).text())
+            self.Dashboard_label_text2.setText(self.table.item(0, 2).text())
+            for col_idx in range(6):  # Loop through all columns for the first row
+                item = self.table.item(0, col_idx)
+                item.setBackground(QtGui.QColor(255, 255, 0))
+
+        if self.table2.rowCount() > 0:
+            self.Dashboard2_label_text.setText(self.table2.item(0, 1).text())
+            self.Dashboard2_label_text2.setText(self.table2.item(0, 2).text())
+
 
     def add_row_to_queue(self, customer):
         # Get the last inserted ID from the database and increment by 1
