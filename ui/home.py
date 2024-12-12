@@ -1,6 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from helper.CRUD import CRUD
+from helper.DateFilterProxyModel import DateFilterProxyModel
 from models.SQLquery import SQLquery
 from ui.new import NewCustomerDialog
 
@@ -160,20 +161,93 @@ class Home(QtWidgets.QWidget):
         self.table2.setStyleSheet("alternate-background-color: #f2f2f2; background-color: #ffffff;")
         self.table2.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)  # Stretch columns to fit
 
-        # new_user = SQLquery(None, "Jane Doe", "0987654321", "jane.doe@example.com", 25.99, "2024-12-11", True)
-        # self.crud.create(new_user)
-
         self.updateTable()
 
+        # Done Button
         self.done_button = QtWidgets.QPushButton("Done", self)
-        self.done_button.setGeometry(500, 140, 100, 30)
+        self.done_button.setGeometry(535, 140, 100, 30)
         self.done_button.setFont(QtGui.QFont("Poppins", 12))
         self.done_button.clicked.connect(self.remove_first_row_from_queue)
 
+        # New Button
         self.new_button = QtWidgets.QPushButton("New", self)
-        self.new_button.setGeometry(400, 140, 100, 30)
+        self.new_button.setGeometry(435, 140, 100, 30)
         self.new_button.setFont(QtGui.QFont("Poppins", 12))
         self.new_button.clicked.connect(self.open_new_customer_dialog)
+
+        # Year Text Field
+        self.year_input = QtWidgets.QLineEdit(self)
+        self.year_input.setPlaceholderText("Year")
+        self.year_input.setGeometry(20, 140, 70, 30)
+        self.year_input.setFont(QtGui.QFont("Poppins", 12))
+        self.year_input.setStyleSheet("background-color: white; color: black;")
+        self.year_input.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Month Text Field
+        self.month_input = QtWidgets.QLineEdit(self)
+        self.month_input.setPlaceholderText("Month")
+        self.month_input.setGeometry(90, 140, 70, 30)
+        self.month_input.setFont(QtGui.QFont("Poppins", 12))
+        self.month_input.setStyleSheet("background-color: white; color: black;")
+        self.month_input.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Day Text Field
+        self.day_input = QtWidgets.QLineEdit(self)
+        self.day_input.setPlaceholderText("Day")
+        self.day_input.setGeometry(160, 140, 50, 30)
+        self.day_input.setFont(QtGui.QFont("Poppins", 12))
+        self.day_input.setStyleSheet("background-color: white; color: black;")
+        self.day_input.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Filter Button
+        self.new_button = QtWidgets.QPushButton("Filter", self)
+        self.new_button.setGeometry(210, 140, 100, 30)
+        self.new_button.setFont(QtGui.QFont("Poppins", 12))
+        self.new_button.clicked.connect(self.filterTable)
+
+        # Clear Filter Button
+        self.new_button = QtWidgets.QPushButton("Clear Filter", self)
+        self.new_button.setGeometry(310, 140, 120, 30)
+        self.new_button.setFont(QtGui.QFont("Poppins", 12))
+        self.new_button.clicked.connect(self.clear_filters)
+
+        ################################################################
+
+        # Year Text Field
+        self.year2_input = QtWidgets.QLineEdit(self)
+        self.year2_input.setPlaceholderText("Year")
+        self.year2_input.setGeometry(865, 140, 70, 30)
+        self.year2_input.setFont(QtGui.QFont("Poppins", 12))
+        self.year2_input.setStyleSheet("background-color: white; color: black;")
+        self.year2_input.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Month Text Field
+        self.month2_input = QtWidgets.QLineEdit(self)
+        self.month2_input.setPlaceholderText("Month")
+        self.month2_input.setGeometry(935, 140, 70, 30)
+        self.month2_input.setFont(QtGui.QFont("Poppins", 12))
+        self.month2_input.setStyleSheet("background-color: white; color: black;")
+        self.month2_input.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Day Text Field
+        self.day2_input = QtWidgets.QLineEdit(self)
+        self.day2_input.setPlaceholderText("Day")
+        self.day2_input.setGeometry(1005, 140, 50, 30)
+        self.day2_input.setFont(QtGui.QFont("Poppins", 12))
+        self.day2_input.setStyleSheet("background-color: white; color: black;")
+        self.day2_input.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Filter Button
+        self.new2_button = QtWidgets.QPushButton("Filter", self)
+        self.new2_button.setGeometry(1055, 140, 100, 30)
+        self.new2_button.setFont(QtGui.QFont("Poppins", 12))
+        self.new2_button.clicked.connect(self.filterTable2)
+
+        # Clear Filter Button
+        self.new2_button = QtWidgets.QPushButton("Clear Filter", self)
+        self.new2_button.setGeometry(1155, 140, 120, 30)
+        self.new2_button.setFont(QtGui.QFont("Poppins", 12))
+        self.new2_button.clicked.connect(self.clear_filters2)
 
     def center_window(self):
         # Get screen geometry
@@ -281,6 +355,103 @@ class Home(QtWidgets.QWidget):
         if self.table2.rowCount() > 0:
             self.Dashboard2_label_text.setText(self.table2.item(0, 1).text())
             self.Dashboard2_label_text2.setText(self.table2.item(0, 2).text())
+
+    
+    def filterTable(self):
+        year = self.year_input.text().strip() or "*"
+        month = self.month_input.text().strip() or "*"
+        day = self.day_input.text().strip() or "*"
+
+        universal = "*"
+        if year == universal and month == universal and day == universal:
+            return
+
+        filter_date = f"{year}-{month}-{day}"
+        
+        count = 0
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 5) 
+            if item:
+                date_parts = item.text().split("-")
+                filter_parts = filter_date.split("-")
+                match = True
+                for date_part, filter_part in zip(date_parts, filter_parts):
+                    if filter_part != "*" and date_part != filter_part:
+                        match = False
+                        break
+                if not match:
+                    self.table.hideRow(row)
+                else:
+                    self.table.showRow(row)
+                    count += 1
+            else:
+                self.table.showRow(row)
+
+        self.Dashboard_label2_text.setText(f"{count}")
+
+    def clear_filters(self):
+        self.year_input.setText("")
+        self.month_input.setText("")
+        self.day_input.setText("")
+
+        self.year_input.setPlaceholderText("Year")
+        self.month_input.setPlaceholderText("Month")
+        self.day_input.setPlaceholderText("Day")
+
+        count = 0
+        for row in range(self.table.rowCount()):
+            self.table.showRow(row)
+            count += 1
+
+        self.Dashboard_label2_text.setText(f"{count}")
+
+    def filterTable2(self):
+        year = self.year2_input.text().strip() or "*"
+        month = self.month2_input.text().strip() or "*"
+        day = self.day2_input.text().strip() or "*"
+
+        universal = "*"
+        if year == universal and month == universal and day == universal:
+            return
+
+        filter_date = f"{year}-{month}-{day}"
+        
+        count = 0
+        for row in range(self.table2.rowCount()):
+            item = self.table2.item(row, 5) 
+            if item:
+                date_parts = item.text().split("-")
+                filter_parts = filter_date.split("-")
+                match = True
+                for date_part, filter_part in zip(date_parts, filter_parts):
+                    if filter_part != "*" and date_part != filter_part:
+                        match = False
+                        break
+                if not match:
+                    self.table2.hideRow(row)
+                else:
+                    self.table2.showRow(row)
+                    count += 1
+            else:
+                self.table2.showRow(row)
+
+        self.Dashboard2_label2_text.setText(f"{count}")
+
+    def clear_filters2(self):
+        self.year2_input.setText("")
+        self.month2_input.setText("")
+        self.day2_input.setText("")
+
+        self.year2_input.setPlaceholderText("Year")
+        self.month2_input.setPlaceholderText("Month")
+        self.day2_input.setPlaceholderText("Day")
+
+        count = 0
+        for row in range(self.table2.rowCount()):
+            self.table2.showRow(row)
+            count += 1
+
+        self.Dashboard2_label2_text.setText(f"{count}")
 
 
     def add_row_to_queue(self, customer):
