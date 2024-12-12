@@ -4,6 +4,7 @@ from helper.CRUD import CRUD
 from helper.DateFilterProxyModel import DateFilterProxyModel
 from models.SQLquery import SQLquery
 from ui.new import NewCustomerDialog
+from helper.smtp import SMTP
 
 class Home(QtWidgets.QWidget):
     def __init__(self):
@@ -496,6 +497,11 @@ class Home(QtWidgets.QWidget):
             sql = SQLquery(
                 int(row_data[0]), row_data[1], row_data[2], row_data[3], float(row_data[4]), row_data[5], True, 'regular'
             )
+
+            self.done_button.setText("Loading..")
+            smpt = SMTP()
+            smpt.sendMail(row_data[1], row_data[3])
+            self.done_button.setText("Done")
 
             if self.crud.update(sql):
                 # Move the row to the second table
