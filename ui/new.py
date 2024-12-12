@@ -107,7 +107,7 @@ class NewCustomerDialog(QtWidgets.QDialog):
 
         date = f"{year:04d}-{month:02d}-{day:02d}"
 
-        customer = SQLquery(None, name, number, email, price, date, False)
+        customer = SQLquery(None, name, number, email, price, date, False, '')
 
         # Add to home queue (this part depends on your Home class logic)
         if self.priority_checkbox.isChecked():

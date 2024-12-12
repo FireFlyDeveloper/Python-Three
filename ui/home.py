@@ -136,16 +136,25 @@ class Home(QtWidgets.QWidget):
 
     def updateTable(self):
         data1 = self.crud.read()
+
         # Reset the table rows
         self.table.setRowCount(0)
         self.table2.setRowCount(0)
 
+        # Separate rows into priority and regular queues
+        priority_data = [user for user in data1 if user.queue_type == 'priority']
+        regular_data = [user for user in data1 if user.queue_type == 'regular']
+
+        priority_data.reverse()
+
         count1 = 0  # Start count from 0
         count2 = 0  # Start count from 0
-        
-        # Populate the tables with data
-        for user in data1:
-            if not user.done:  # User is not done, add to table1
+
+        done = []
+
+        # Populate the tables with sorted data
+        for user in priority_data:
+            if not user.done:  # User is not done, add to table
                 self.table.insertRow(count1)
                 self.table.setItem(count1, 0, QtWidgets.QTableWidgetItem(str(user.id)))  # ID
                 self.table.setItem(count1, 1, QtWidgets.QTableWidgetItem(user.name))       # Name
@@ -153,55 +162,83 @@ class Home(QtWidgets.QWidget):
                 self.table.setItem(count1, 3, QtWidgets.QTableWidgetItem(user.email))      # Email
                 self.table.setItem(count1, 4, QtWidgets.QTableWidgetItem(str(user.price))) # Price
                 self.table.setItem(count1, 5, QtWidgets.QTableWidgetItem(user.date))       # Date
-                
+
                 # Make the row non-editable
                 for col_idx in range(6):
                     item = self.table.item(count1, col_idx)
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)  # Make non-editable
 
-                count1 += 1  # Increment count for table1
-                
-            else:  # User is done, add to table2
-                self.table2.insertRow(count2)
-                self.table2.setItem(count2, 0, QtWidgets.QTableWidgetItem(str(user.id)))  # ID
-                self.table2.setItem(count2, 1, QtWidgets.QTableWidgetItem(user.name))       # Name
-                self.table2.setItem(count2, 2, QtWidgets.QTableWidgetItem(user.number))     # Number
-                self.table2.setItem(count2, 3, QtWidgets.QTableWidgetItem(user.email))      # Email
-                self.table2.setItem(count2, 4, QtWidgets.QTableWidgetItem(str(user.price))) # Price
-                self.table2.setItem(count2, 5, QtWidgets.QTableWidgetItem(user.date))       # Date
+                count1 += 1  # Increment count for table
+
+            else:
+                done.append(user)
+
+        # Populate the regular queue
+        for user in regular_data:
+            if not user.done:  # User is not done, add to table
+                self.table.insertRow(count1)
+                self.table.setItem(count1, 0, QtWidgets.QTableWidgetItem(str(user.id)))  # ID
+                self.table.setItem(count1, 1, QtWidgets.QTableWidgetItem(user.name))       # Name
+                self.table.setItem(count1, 2, QtWidgets.QTableWidgetItem(user.number))     # Number
+                self.table.setItem(count1, 3, QtWidgets.QTableWidgetItem(user.email))      # Email
+                self.table.setItem(count1, 4, QtWidgets.QTableWidgetItem(str(user.price))) # Price
+                self.table.setItem(count1, 5, QtWidgets.QTableWidgetItem(user.date))       # Date
 
                 # Make the row non-editable
                 for col_idx in range(6):
-                    item = self.table2.item(count2, col_idx)
+                    item = self.table.item(count1, col_idx)
                     item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)  # Make non-editable
 
-                count2 += 1  # Increment count for table2
+                count1 += 1  # Increment count for table
 
-        # Set background color for the first row in table1
-        if count1 > 0:  # Ensure there is at least one row in table1
-            for col_idx in range(6):  # Loop through all columns for the first row
-                item = self.table.item(0, col_idx)
-                item.setBackground(QtGui.QColor(255, 255, 0))
+            else:
+                done.append(user)
+
+        done.reverse()
+
+        for user in done:
+            self.table2.insertRow(count2)
+            self.table2.setItem(count2, 0, QtWidgets.QTableWidgetItem(str(user.id)))  # ID
+            self.table2.setItem(count2, 1, QtWidgets.QTableWidgetItem(user.name))       # Name
+            self.table2.setItem(count2, 2, QtWidgets.QTableWidgetItem(user.number))     # Number
+            self.table2.setItem(count2, 3, QtWidgets.QTableWidgetItem(user.email))      # Email
+            self.table2.setItem(count2, 4, QtWidgets.QTableWidgetItem(str(user.price))) # Price
+            self.table2.setItem(count2, 5, QtWidgets.QTableWidgetItem(user.date))       # Date
+
+            for col_idx in range(6):
+                item = self.table2.item(count2, col_idx)
+                item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)  # Make non-editable
+
+            count2 += 1
+
+        if self.table.rowCount() > 0:
+                for col_idx in range(6):  # Loop through all columns for the first row
+                    item = self.table.item(0, col_idx)
+                    item.setBackground(QtGui.QColor(255, 255, 0))
 
     def add_row_to_queue(self, customer):
-        new_id = self.crud.get_last_inserted_id()
-        if new_id:
-            new_id += 1
-        else:
-            new_id = 1
-        sql = SQLquery(new_id, customer.name, customer.number, customer.email, customer.price, customer.date, False)
-
+        # Get the last inserted ID from the database and increment by 1
+        new_id = self.crud.get_last_inserted_id() + 1 if self.crud.get_last_inserted_id() else 1
+        
+        # Create the new customer object with done = False (indicating it's in the regular queue)
+        sql = SQLquery(new_id, customer.name, customer.number, customer.email, customer.price, customer.date, False, 'regular')
+        
+        # Insert into the database with regular queue flag
         if self.crud.create(sql):
             # Row inserted successfully, reload data and update the table
             self.updateTable()  # Update the table with the latest data
-            print("Row successfully added to the queue.")
+            print("Row successfully added to the regular queue.")
         else:
             print("Failed to add row to the database.")
 
     def add_row_to_priority_queue(self, customer):
-        new_id = self.crud.get_last_inserted_id() + 1
-        sql = SQLquery(new_id, customer.name, customer.number, customer.email, customer.price, customer.date, False)
-
+        # Get the last inserted ID from the database and increment by 1
+        new_id = self.crud.get_last_inserted_id() + 1 if self.crud.get_last_inserted_id() else 1
+        
+        # Create the new customer object with done = False (indicating it's in the priority queue)
+        sql = SQLquery(new_id, customer.name, customer.number, customer.email, customer.price, customer.date, False, 'priority')
+        
+        # Insert into the database with priority queue flag
         if self.crud.create(sql):
             print("Row successfully added to the priority queue.")
             
@@ -219,28 +256,15 @@ class Home(QtWidgets.QWidget):
 
             # Update the database to mark the record as completed
             sql = SQLquery(
-                int(row_data[0]), row_data[1], row_data[2], row_data[3], float(row_data[4]), row_data[5], True
+                int(row_data[0]), row_data[1], row_data[2], row_data[3], float(row_data[4]), row_data[5], True, 'regular'
             )
 
             if self.crud.update(sql):
                 # Move the row to the second table
-                new_row_index = self.table2.rowCount()
-                self.table2.insertRow(new_row_index)
-                for col_idx, value in enumerate(row_data):
-                    self.table2.setItem(new_row_index, col_idx, QtWidgets.QTableWidgetItem(value))
-                    item = self.table2.item(new_row_index, col_idx)
-                    item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)  # Make non-editable
-
-                # Remove the row from the first table
-                self.table.removeRow(0)
+                self.updateTable()
                 print("First row successfully moved to completed queue.")
             else:
                 print("Failed to update row in the database.")
-
-            if self.table.rowCount() > 0:
-                for col_idx in range(6):  # Loop through all columns for the first row
-                    item = self.table.item(0, col_idx)
-                    item.setBackground(QtGui.QColor(255, 255, 0))
 
     def open_new_customer_dialog(self):
         dialog = NewCustomerDialog(self)
