@@ -3,7 +3,7 @@ from sqlite3 import Error
 from models.SQLquery import SQLquery
 
 class CRUD:
-    DB_PATH = "laundry_ops.db"  # SQLite database file
+    DB_PATH = "three.db"  # SQLite database file
 
     def connect(self):
         """Connect to the SQLite database and return the connection."""
